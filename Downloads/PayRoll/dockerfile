@@ -1,0 +1,21 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /app
+
+# Step 1: Copy only pom.xml
+COPY pom.xml .
+
+# Step 2: Pre-download dependencies
+RUN mvn -B dependency:go-offline
+
+# Step 3: Copy source code
+COPY src ./src
+
+# Step 4: FULL new build (no cache)
+RUN mvn -B clean package -DskipTests -Dmaven.compiler.useIncrementalCompilation=false
+
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+COPY --from=build /app/target/*.jar ./my-application.jar
+EXPOSE 8090
+CMD ["java", "-jar", "my-application.jar"]
