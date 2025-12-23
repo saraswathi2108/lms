@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,10 +28,9 @@ public class QuizService {
     private final OptionRepository optionRepository;
     private final CourseClient courseClient;
 
-    // =========================
+    // ===============================
     // CREATE SINGLE QUIZ
-    // =========================
-
+    // ===============================
     public QuizCreateResponse createQuiz(QuizCreateRequest request) {
 
         validateRequest(request);
@@ -40,7 +39,7 @@ public class QuizService {
         Quiz quiz = Quiz.builder()
                 .quizType(request.getQuizType())
                 .courseId(request.getCourseId())
-                .lectureId(request.getLectureId())
+                .lectureId(request.getLectureId()) // null for GRAND
                 .totalMarks(request.getTotalMarks())
                 .build();
 
@@ -65,9 +64,7 @@ public class QuizService {
                         Option.builder()
                                 .question(question)
                                 .optionText(qr.getOptions().get(i))
-                                .isCorrect(
-                                        qr.getCorrectOptionIndexes().contains(i)
-                                )
+                                .isCorrect(qr.getCorrectOptionIndexes().contains(i))
                                 .build()
                 );
             }
@@ -86,10 +83,9 @@ public class QuizService {
         );
     }
 
-    // =========================
+    // ===============================
     // CREATE BULK QUIZZES
-    // =========================
-
+    // ===============================
     public List<QuizCreateResponse> createQuizzesBulk(
             List<QuizCreateRequest> requests
     ) {
@@ -107,10 +103,9 @@ public class QuizService {
         return responses;
     }
 
-    // =========================
+    // ===============================
     // REQUEST VALIDATION
-    // =========================
-
+    // ===============================
     private void validateRequest(QuizCreateRequest request) {
 
         if (request.getCourseId() == null) {
@@ -121,7 +116,7 @@ public class QuizService {
             throw new IllegalArgumentException("quizType is mandatory");
         }
 
-        // ---------- LECTURE QUIZ ----------
+        // -------- LECTURE QUIZ --------
         if ("LECTURE".equals(request.getQuizType())) {
 
             if (request.getLectureId() == null) {
@@ -137,7 +132,7 @@ public class QuizService {
             }
         }
 
-        // ---------- GRAND QUIZ ----------
+        // -------- GRAND QUIZ --------
         if ("GRAND".equals(request.getQuizType())
                 && request.getLectureId() != null) {
             throw new IllegalArgumentException(
@@ -157,7 +152,7 @@ public class QuizService {
             if ("MCQ".equals(q.getQuestionType())
                     && q.getCorrectOptionIndexes().size() != 1) {
                 throw new IllegalArgumentException(
-                        "MCQ must have exactly one correct option"
+                        "MCQ must have exactly one correct answer"
                 );
             }
 
@@ -171,13 +166,12 @@ public class QuizService {
         });
     }
 
-    // =========================
+    // ===============================
     // COURSE / LECTURE VALIDATION
-    // =========================
-
+    // ===============================
     private void validateWithCourseService(QuizCreateRequest request) {
 
-        // ✅ Course must exist (for both GRAND & LECTURE)
+        // ✅ Course must exist (both GRAND & LECTURE)
         ApiResponse<CourseResponseDTO> courseResponse =
                 courseClient.getCourse(request.getCourseId());
 
@@ -185,7 +179,7 @@ public class QuizService {
             throw new IllegalArgumentException("Course not found");
         }
 
-        // ✅ Lecture validation only for LECTURE quiz
+        // ✅ Lecture exists (LECTURE quiz only)
         if ("LECTURE".equals(request.getQuizType())) {
 
             ApiResponse<LectureResponseDTO> lectureResponse =
@@ -199,17 +193,52 @@ public class QuizService {
                 throw new IllegalArgumentException("Lecture not found");
             }
 
-            LectureResponseDTO lecture = lectureResponse.getData();
 
-            // Safety check
-            if (!Objects.equals(
-                    lecture.getCourseId(),
-                    request.getCourseId()
-            )) {
-                throw new IllegalArgumentException(
-                        "Lecture does not belong to the given course"
-                );
-            }
         }
+    }
+
+    public List<QuizCreateResponse> getQuizzesByCourse(Long courseId) {
+
+        List<Quiz> quizzes = quizRepository.findByCourseId(courseId);
+
+        return quizzes.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    public QuizCreateResponse getGrandQuizByCourse(Long courseId) {
+
+        Quiz quiz = quizRepository
+                .findByCourseIdAndQuizType(courseId, "GRAND")
+                .stream()
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Grand quiz not found"));
+
+        return mapToResponse(quiz);
+    }
+
+    public QuizCreateResponse getQuizByLecture(Long lectureId) {
+
+        Quiz quiz = quizRepository
+                .findByLectureId(lectureId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Lecture quiz not found"));
+
+        return mapToResponse(quiz);
+    }
+
+
+    private QuizCreateResponse mapToResponse(Quiz quiz) {
+
+        return new QuizCreateResponse(
+                quiz.getId(),
+                quiz.getQuizType(),
+                quiz.getCourseId(),
+                quiz.getLectureId(),
+                quiz.getTotalMarks(),
+                "Quiz fetched successfully"
+        );
     }
 }

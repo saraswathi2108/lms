@@ -37,5 +37,24 @@ public class QuizController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(responses);
     }
+    @GetMapping("/course/{courseId}")
+    public ResponseEntity<List<QuizCreateResponse>> getQuizzesByCourse(
+            @PathVariable Long courseId
+    ) {
+        return ResponseEntity.ok(
+                quizService.getQuizzesByCourse(courseId)
+        );
+    }
+    @GetMapping("/lecture/{lectureId}")
+    public ResponseEntity<QuizCreateResponse> getQuizByLecture(
+            @PathVariable Long lectureId
+    ) {
+        return ResponseEntity.ok(
+                quizService.getQuizByLecture(lectureId)
+        );
+    }
+
+
+
 
 }
