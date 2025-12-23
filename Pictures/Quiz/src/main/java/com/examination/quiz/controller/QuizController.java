@@ -1,8 +1,6 @@
 package com.examination.quiz.controller;
 
-import com.examination.quiz.dto.BulkQuizCreateRequest;
-import com.examination.quiz.dto.QuizCreateRequest;
-import com.examination.quiz.dto.QuizCreateResponse;
+import com.examination.quiz.dto.*;
 import com.examination.quiz.service.QuizService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +49,15 @@ public class QuizController {
     ) {
         return ResponseEntity.ok(
                 quizService.getQuizByLecture(lectureId)
+        );
+    }
+
+    @PostMapping("/submit")
+    public ResponseEntity<QuizSubmitResponse> submitQuiz(
+            @RequestBody QuizSubmitRequest request
+    ) {
+        return ResponseEntity.ok(
+                quizService.submitQuiz(request)
         );
     }
 

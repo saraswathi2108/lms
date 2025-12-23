@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -239,6 +240,58 @@ public class QuizService {
                 quiz.getLectureId(),
                 quiz.getTotalMarks(),
                 "Quiz fetched successfully"
+        );
+    }
+
+    public QuizSubmitResponse submitQuiz(QuizSubmitRequest request) {
+
+        Quiz quiz = quizRepository.findById(request.getQuizId())
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Quiz not found"));
+
+        List<Question> questions =
+                questionRepository.findByQuizId(quiz.getId());
+
+        int totalQuestions = questions.size();
+        int correctAnswers = 0;
+        int obtainedMarks = 0;
+
+        for (Question question : questions) {
+
+            QuestionAnswerDTO answer = request.getAnswers()
+                    .stream()
+                    .filter(a -> a.getQuestionId().equals(question.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (answer == null) continue;
+
+            List<Option> options =
+                    optionRepository.findByQuestionId(question.getId());
+
+            Set<Integer> correctIndexes = options.stream()
+                    .filter(Option::getIsCorrect)
+                    .map(o -> options.indexOf(o))
+                    .collect(Collectors.toSet());
+
+            Set<Integer> selectedIndexes =
+                    Set.copyOf(answer.getSelectedOptionIndexes());
+
+            if (correctIndexes.equals(selectedIndexes)) {
+                correctAnswers++;
+                obtainedMarks += question.getMarks();
+            }
+        }
+
+        boolean passed = obtainedMarks >= (quiz.getTotalMarks() * 0.4);
+
+        return new QuizSubmitResponse(
+                quiz.getId(),
+                totalQuestions,
+                correctAnswers,
+                quiz.getTotalMarks(),
+                obtainedMarks,
+                passed
         );
     }
 }
