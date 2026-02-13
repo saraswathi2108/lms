@@ -12,7 +12,9 @@ public class Payment {
     private String orderId;
 
     @OneToOne
+    @JoinColumn(name = "enrollment_id", nullable = false)
     private Enrollment enrollment;
+
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;

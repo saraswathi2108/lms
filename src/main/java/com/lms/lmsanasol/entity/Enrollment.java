@@ -29,6 +29,9 @@ public class Enrollment {
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
 
+    @OneToOne(mappedBy = "enrollment", cascade = CascadeType.ALL)
+    private Payment payment;
+
     private LocalDateTime enrolledAt;
 
     @PrePersist

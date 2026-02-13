@@ -10,4 +10,5 @@ public class EnrollmentRequestDTO {
     private String phoneNumber;
     private String collegeName;
     private Integer yearOfStudy;
+    private Long courseId;
 }
