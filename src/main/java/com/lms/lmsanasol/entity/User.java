@@ -40,7 +40,7 @@ public class User {
 
 
     @Column(nullable = false)
-    private boolean forcePasswordChange = true;
+    private Boolean  forcePasswordChange = true;
 
     @Column(length = 500)
     private String activationToken;

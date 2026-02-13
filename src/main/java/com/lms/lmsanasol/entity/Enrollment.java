@@ -4,13 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+
 @Entity
-@Table(name = "enrollments",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {"user_id", "course_id"}
-                )
-        })
+@Table(name = "enrollments")
 @Data
 public class Enrollment {
 
@@ -18,13 +14,19 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private String fullName;
+    private String email;
+    private String phoneNumber;
+    private String collegeName;
+    private Integer yearOfStudy;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus paymentStatus;
